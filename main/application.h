@@ -113,6 +113,7 @@ struct application
 
 
 	auto _check_eyes(::std::string_view device) {
+		::std::cout << "check eyes: " << device << ::std::endl;
 		using namespace ::std::chrono_literals;
 
 		::std::unique_ptr<::boost::asio::serial_port> result = nullptr;
