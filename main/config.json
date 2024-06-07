@@ -1,0 +1,5 @@
+{
+  "uri": "ws://127.0.0.1:9000/websocket/100",
+  "eyes_device": "COM4",
+  "steering_device": "/dev/tyy1"
+}
