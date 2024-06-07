@@ -10,3 +10,7 @@
 //#include "NGS/log/log.h"
 
 #define NGS_LOGL(...) (void*)(nullptr)
+
+#include <filesystem>
+#include <chrono>
+#include <thread>

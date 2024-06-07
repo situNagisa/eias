@@ -32,8 +32,14 @@ struct config
 	}
 };
 
+
 int main()
 {
+	::boost::asio::io_service io{};
+	auto ptr = check_eyes(io, "COM4");
+	::std::cout << ::std::boolalpha << (ptr != nullptr) << ::std::endl;
+	while (true);
+	return 0;
 	config config{};
 	config.read_from("config.json");
 

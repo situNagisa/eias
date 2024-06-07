@@ -14,7 +14,8 @@ struct application
 	};
 
 	application(::std::string_view uri, ::std::string_view eyes_device, ::std::string_view steering_device)
-		: _eyes(_io, eyes_device)
+		: _eyes_ptr(_create_eyes_ptr(eyes_device))
+		, _eyes(*_eyes_ptr)
 		//, _steering(_io, steering_device)
 	{
 		_client.set_access_channels(::websocketpp::log::alevel::all);
@@ -110,7 +111,72 @@ struct application
 		}
 	}
 
+
+	auto _check_eyes(::std::string_view device) {
+		using namespace ::std::chrono_literals;
+
+		::std::unique_ptr<::boost::asio::serial_port> result = nullptr;
+		try
+		{
+			result = ::std::make_unique<::boost::asio::serial_port>(_io, device.data());
+			auto&& port = *result;
+
+			port.set_option(::boost::asio::serial_port::baud_rate(115200));
+			port.set_option(::boost::asio::serial_port::flow_control(::boost::asio::serial_port::flow_control::none));
+			port.set_option(::boost::asio::serial_port::parity(::boost::asio::serial_port::parity::none));
+			port.set_option(::boost::asio::serial_port::stop_bits(::boost::asio::serial_port::stop_bits::one));
+			port.set_option(::boost::asio::serial_port::character_size(8));
+
+			bool success = false;
+			::std::array<::std::uint8_t, 1> receive{};
+
+			port.write_some(::boost::asio::buffer(::std::array<::std::uint8_t, 1>{'n'}));
+			port.read_some(::boost::asio::buffer(receive));
+			success = (receive[0] == '6');
+
+			if (!success)
+				result.reset();
+
+			return result;
+		}
+		catch (const ::boost::system::system_error& error)
+		{
+			result.reset();
+			return result;
+		}
+	}
+
+	auto _check_directory(const ::std::filesystem::path& dir)
+	{
+		::std::unique_ptr<::boost::asio::serial_port> result = nullptr;
+		if (!::std::filesystem::is_directory(dir))
+			return result;
+		if (!::std::filesystem::exists(dir))
+			return result;
+
+		for (auto& entry : ::std::filesystem::directory_iterator(dir)) {
+			if (::std::filesystem::is_directory(entry.path()))
+				continue;
+			result = _check_eyes(entry.path().string());
+			if (result != nullptr)
+				return result;
+		}
+		return result;
+	}
+
+	auto _create_eyes_ptr(::std::string_view device)
+	{
+		auto result = _check_eyes(device);
+		if (result != nullptr)
+			return result;
+		result = _check_directory("/dev/");
+		if (result != nullptr)
+			return result;
+		return result;
+	}
+
 	::boost::asio::io_service _io{};
+	::std::unique_ptr<::boost::asio::serial_port> _eyes_ptr;
 	client_type _client{};
 	eyes _eyes;
 	//steering_engine _steering;
