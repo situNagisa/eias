@@ -1,6 +1,8 @@
 
-.vs/
-_ReSharper.Caches/
+.*/
+_*/
+discard/
 bin/
 doc/
 temp/
+extern/
